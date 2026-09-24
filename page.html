@@ -3,26 +3,30 @@
 <meta name=apple-mobile-web-app-capable content=yes><meta name=theme-color content="#07080c">
 <title>PlayDrop</title>
 <style>
-:root{--bg:#07080c;--fg:#f3f5fa;--mut:#8b93a7;--acc:#4f8cff;--glass:rgba(255,255,255,.06);--edge:rgba(255,255,255,.1)}
-@media(prefers-color-scheme:light){:root{--bg:#fbfbfd;--fg:#15171c;--mut:#6b7080;--glass:rgba(255,255,255,.7);--edge:rgba(0,0,0,.08)}}
+:root{--bg:#07080c;--fg:#f3f5fa;--mut:#8b93a7;--acc:#4f8cff;--glass:rgba(255,255,255,.06);--edge:rgba(255,255,255,.1);--card:#12151c}
+@media(prefers-color-scheme:light){:root{--bg:#fbfbfd;--fg:#15171c;--mut:#6b7080;--glass:rgba(255,255,255,.7);--edge:rgba(0,0,0,.08);--card:#fff}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font:15px -apple-system,system-ui,sans-serif}
 canvas{position:fixed;inset:0;width:100%;height:100%}
 .ui{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 18px)}
-.hint{margin-top:18vh;text-align:center}
+.hint{margin-top:16vh;text-align:center;transition:opacity .3s}
 .hint h1{font-weight:500;font-size:clamp(20px,4vw,26px);margin:0;color:var(--acc);letter-spacing:-.01em}
 .hint p{margin:6px 0 0;color:var(--mut);font-size:14px}
-.peer{margin-top:7vh;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;user-select:none}
-.orb{position:relative;width:92px;height:92px;border-radius:50%;display:grid;place-items:center;
+.peers{margin-top:6vh;display:flex;flex-wrap:wrap;justify-content:center;gap:28px;max-width:640px}
+.peer{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;user-select:none;width:120px;animation:in .45s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes in{from{opacity:0;transform:scale(.6)}}
+.orb{position:relative;width:88px;height:88px;border-radius:50%;display:grid;place-items:center;
  background:var(--glass);border:1px solid var(--edge);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
  box-shadow:-3px 0 18px rgba(255,40,90,.35),3px 0 18px rgba(40,200,255,.35),0 10px 40px rgba(79,140,255,.25);transition:transform .25s}
 .peer:active .orb,.peer.on .orb{transform:scale(1.08)}
-.orb svg.ic{width:40px;height:40px;stroke:var(--fg)}
-.ring{position:absolute;inset:-6px;width:104px;height:104px;transform:rotate(-90deg)}
-.ring circle{fill:none;stroke:var(--acc);stroke-width:3;stroke-linecap:round;stroke-dasharray:314;stroke-dashoffset:314;transition:stroke-dashoffset .15s}
-.name{font-weight:600}.st{color:var(--mut);font-size:13px;min-height:1em;text-align:center}
+.orb svg.ic{width:38px;height:38px;stroke:var(--fg)}
+.ring{position:absolute;inset:-6px;width:100px;height:100px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke:var(--acc);stroke-width:3;stroke-linecap:round;stroke-dasharray:302;stroke-dashoffset:302;transition:stroke-dashoffset .15s}
+.name{font-weight:600;text-align:center}.dev{color:var(--mut);font-size:12px;margin-top:-4px}
+.st{color:var(--mut);font-size:12px;min-height:1em;text-align:center;word-break:break-all}
 .me{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:8px}
-.logo{width:54px;height:54px}
+.logo{width:50px;height:50px}.known{color:var(--mut);font-size:14px}
+.known b{color:var(--fg);background:var(--glass);border:1px solid var(--edge);border-radius:6px;padding:2px 8px;cursor:pointer}
 .pill{border:1px solid var(--edge);background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
  color:var(--fg);border-radius:999px;padding:8px 16px;font:inherit;cursor:pointer}
 .pill b{color:var(--acc);font-weight:600}
@@ -37,25 +41,33 @@ canvas{position:fixed;inset:0;width:100%;height:100%}
 .ic2{width:38px;height:38px;border-radius:10px;background:rgba(79,140,255,.14);display:grid;place-items:center;flex:none;color:var(--acc);font-size:12px;font-weight:700}
 .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sz{color:var(--mut);font-size:13px}
 .dl{color:var(--acc)}.empty{padding:28px;text-align:center;color:var(--mut)}
-.scrim{position:fixed;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.3s;z-index:4}.scrim.open{opacity:1;pointer-events:auto}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:.3s;z-index:4}.scrim.open{opacity:1;pointer-events:auto}
+.dlg{position:fixed;left:50%;top:50%;width:min(340px,calc(100% - 32px));transform:translate(-50%,-40%) scale(.95);opacity:0;pointer-events:none;
+ background:var(--card);border:1px solid var(--edge);border-radius:20px;padding:22px;z-index:6;transition:.25s;text-align:center;
+ box-shadow:-4px 0 30px rgba(255,40,90,.18),4px 0 30px rgba(40,200,255,.18),0 20px 60px rgba(0,0,0,.4)}
+.dlg.open{opacity:1;transform:translate(-50%,-50%);pointer-events:auto}
+.dlg h3{margin:0 0 4px;font-size:17px}.dlg .fn{margin:14px 0 4px;font-weight:600;word-break:break-all}
+.row{display:flex;gap:10px;margin-top:18px}.row>*{flex:1;padding:11px;border-radius:12px;border:0;font:600 15px system-ui;cursor:pointer;text-decoration:none;text-align:center}
+.btn2{background:var(--glass);color:var(--fg);border:1px solid var(--edge)}.btn1{background:var(--acc);color:#fff}
 input{display:none}
 </style></head><body>
 <canvas id=c></canvas>
 <div class=ui>
- <div class=hint><h1>Tap the PC to send files</h1><p>Encrypted · no size limit · stays on your Wi‑Fi</p></div>
- <label class=peer id=peer><input type=file id=f multiple>
-  <div class=orb><svg class=ring viewBox="0 0 104 104"><circle id=pr cx=52 cy=52 r=50 /></svg>
-   <svg class=ic viewBox="0 0 24 24" fill=none stroke-width=1.6 stroke-linecap=round stroke-linejoin=round><rect x=3 y=4 width=18 height=12 rx=2 /><path d="M8 20h8M12 16v4"/></svg></div>
-  <div class=name>{{HOST}}</div><div class=st id=s></div>
- </label>
+ <div class=hint id=hint><h1 id=ht>Open PlayDrop on other devices</h1><p>Encrypted · no size limit · stays on your Wi‑Fi</p></div>
+ <div class=peers id=peers></div>
  <div class=me>
   <svg class=logo viewBox="0 0 48 48" fill=none stroke=var(--acc) stroke-width=4 stroke-linecap=round><circle cx=24 cy=24 r=4 fill=var(--acc) stroke=none /><path d="M15 33a12 12 0 1 1 18 0"/><path d="M9 39a20 20 0 1 1 30 0"/></svg>
-  <button class=pill id=open>Files on PC · <b>{{COUNT}}</b></button>
+  <div class=known>You are known as <b id=myname title="Tap to rename"></b></div>
+  <button class=pill id=filesBtn>Files on {{HOST}} · <b id=count>0</b></button>
  </div>
 </div>
 <div class=scrim id=scrim></div>
-<div class=sheet id=sheet><div class=grab></div><h2>On {{HOST}}</h2><div class=list>{{ROWS}}</div></div>
+<div class=sheet id=sheet><div class=grab></div><h2>On {{HOST}}</h2><div class=list id=list>{{ROWS}}</div></div>
+<div class=dlg id=dlg><h3 id=dfrom></h3><div class=sz>sent you a file</div><div class=fn id=dname></div><div class=sz id=dsize></div>
+ <div class=row><button class=btn2 id=dno>Ignore</button><a class=btn1 id=dyes download>Save</a></div></div>
 <script>
+if(location.search)history.replaceState(null,'','/'); // hide ?k= from the address bar
+
 // ---- waves with chromatic aberration ----
 const cv=c,x=cv.getContext('2d'),dark=matchMedia('(prefers-color-scheme:dark)').matches;let W,H,D,pulse=0;
 function rs(){D=devicePixelRatio||1;W=cv.width=innerWidth*D;H=cv.height=innerHeight*D}rs();addEventListener('resize',rs);
@@ -72,21 +84,78 @@ function frame(t){t/=1000;x.clearRect(0,0,W,H);x.globalCompositeOperation=dark?'
  x.globalCompositeOperation='source-over';pulse*=.96;requestAnimationFrame(frame)}
 requestAnimationFrame(frame);
 
-// ---- sheet ----
-const tog=v=>{sheet.classList.toggle('open',v);scrim.classList.toggle('open',v)};
-open.onclick=()=>tog(true);scrim.onclick=()=>tog(false);
+// ---- identity: random name, remembered on this device ----
+const ADJ='Peach Mint Coral Amber Jade Ruby Silver Golden Cosmic Lunar Solar Velvet Misty Frosty Sunny Lucky Swift Brave Quiet Neon'.split(' ');
+const ANI='Pony Otter Panda Fox Koala Falcon Dolphin Tiger Owl Lynx Seal Wolf Hare Crane Gecko Bison Moose Robin Whale Lemur'.split(' ');
+const pick=a=>a[Math.random()*a.length|0];
+const ua=navigator.userAgent,TYPE=/iPhone/.test(ua)?'iPhone':/iPad|Macintosh.*Mobile/.test(ua)||(/Macintosh/.test(ua)&&navigator.maxTouchPoints>1)?'iPad':
+ /Android/.test(ua)?'Android':/Macintosh/.test(ua)?'Mac':/Windows/.test(ua)?'Windows':'Browser';
+let me;try{me=JSON.parse(localStorage.pd)}catch(e){}
+if(!me||!me.id)me={id:(crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2)+Date.now()),name:pick(ADJ)+' '+pick(ANI)};
+const save=()=>{try{localStorage.pd=JSON.stringify(me)}catch(e){}};save();
+myname.textContent=me.name;
+myname.onclick=()=>{const v=prompt('Your device name',me.name);if(v&&v.trim()){me.name=v.trim().slice(0,40);myname.textContent=me.name;save();hello()}};
+
+// ---- device icons ----
+const IC={
+ phone:'<rect x=7 y=2.5 width=10 height=19 rx=2.5 /><path d="M11 18.5h2"/>',
+ tablet:'<rect x=4 y=2.5 width=16 height=19 rx=2.5 /><path d="M11 18.5h2"/>',
+ pc:'<rect x=3 y=4 width=18 height=12 rx=2 /><path d="M8 20h8M12 16v4"/>',
+ laptop:'<rect x=5 y=5 width=14 height=10 rx=1.5 /><path d="M2.5 18.5h19"/>'};
+const icon=t=>IC[t=='iPhone'||t=='Android'?'phone':t=='iPad'?'tablet':t=='Mac'?'laptop':'pc'];
+
+// ---- peers ----
+const nodes={};
+function render(list){
+ const ids=new Set(list.map(p=>p.id));
+ for(const id in nodes)if(!ids.has(id)){nodes[id].remove();delete nodes[id]}
+ for(const p of list){let n=nodes[p.id];
+  if(!n){n=nodes[p.id]=document.createElement('label');n.className='peer';
+   n.innerHTML=`<input type=file multiple><div class=orb><svg class=ring viewBox="0 0 100 100"><circle cx=50 cy=50 r=48 /></svg>
+    <svg class=ic viewBox="0 0 24 24" fill=none stroke-width=1.6 stroke-linecap=round stroke-linejoin=round></svg></div>
+    <div class=name></div><div class=dev></div><div class=st></div>`;
+   const inp=n.querySelector('input');inp.onchange=()=>{send(p.id,n,inp.files);inp.value=''};
+   n.addEventListener('dragover',e=>{e.preventDefault();n.classList.add('on')});
+   n.addEventListener('dragleave',()=>n.classList.remove('on'));
+   n.addEventListener('drop',e=>{e.preventDefault();n.classList.remove('on');send(p.id,n,e.dataTransfer.files)});
+   peers.appendChild(n)}
+  n.querySelector('.ic').innerHTML=icon(p.type);n.querySelector('.name').textContent=p.name;
+  n.querySelector('.dev').textContent=p.id=='host'?'This PC':p.type}
+ ht.textContent=list.length?'Tap a device to send files':'Open PlayDrop on other devices';
+}
+
+// ---- heartbeat ----
+const inbox=[];
+async function hello(){try{
+ const r=await fetch('/hello',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:me.id,name:me.name,type:TYPE})});
+ if(r.status==401)return location.reload();
+ const j=await r.json();render(j.peers);
+ if(+count.textContent!==j.count){count.textContent=j.count;refreshList()}
+ inbox.push(...j.inbox);showNext()}catch(e){}}
+hello();setInterval(hello,2500);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)hello()});
+
+// ---- incoming ----
+function showNext(){if(dlg.classList.contains('open')||!inbox.length)return;const o=inbox.shift();pulse=1;
+ dfrom.textContent=o.from;dname.textContent=o.name;dsize.textContent=o.size;dyes.href='/'+encodeURIComponent(o.name);
+ dlg.classList.add('open');scrim.classList.add('open')}
+const closeDlg=()=>{dlg.classList.remove('open');scrim.classList.remove('open');setTimeout(showNext,300)};
+dno.onclick=closeDlg;dyes.addEventListener('click',()=>setTimeout(closeDlg,100));
+
+// ---- files sheet ----
+async function refreshList(){try{list.innerHTML=await (await fetch('/list')).text()}catch(e){}}
+const tog=v=>{sheet.classList.toggle('open',v);scrim.classList.toggle('open',v);if(v)refreshList()};
+filesBtn.onclick=()=>tog(true);
+scrim.onclick=()=>{if(dlg.classList.contains('open'))closeDlg();else tog(false)};
 let y0;sheet.addEventListener('touchstart',e=>y0=e.touches[0].clientY);sheet.addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-y0>60)tog(false)});
 
 // ---- upload ----
-const setP=r=>pr.style.strokeDashoffset=314*(1-r);
-async function send(files){for(const file of files){await new Promise(ok=>{
- const q=new XMLHttpRequest(),t0=Date.now();q.open('PUT','/upload/'+encodeURIComponent(file.name));
- q.upload.onprogress=e=>{const r=e.loaded/e.total,mb=e.loaded/1048576/((Date.now()-t0)/1000||1);setP(r);pulse=Math.min(1,pulse+.02);
-  s.textContent=Math.round(r*100)+'% · '+mb.toFixed(1)+' MB/s'};
- q.onload=()=>{s.textContent=q.status<300?'✓ '+file.name:'Failed: '+file.name;ok()};q.onerror=()=>{s.textContent='Failed: '+file.name;ok()};q.send(file)})}
- pulse=1;setTimeout(()=>location.reload(),900)}
-f.onchange=()=>send(f.files);
-['dragover','dragenter'].forEach(e=>addEventListener(e,v=>{v.preventDefault();peer.classList.add('on')}));
-['dragleave','drop'].forEach(e=>addEventListener(e,()=>peer.classList.remove('on')));
-addEventListener('drop',v=>{v.preventDefault();send(v.dataTransfer.files)});
+async function send(to,n,files){const ring=n.querySelector('circle'),s=n.querySelector('.st');
+ for(const file of files){await new Promise(ok=>{
+  const q=new XMLHttpRequest(),t0=Date.now();
+  q.open('PUT','/upload/'+encodeURIComponent(file.name)+'?to='+encodeURIComponent(to)+'&from='+encodeURIComponent(me.name));
+  q.upload.onprogress=e=>{const r=e.loaded/e.total,mb=e.loaded/1048576/((Date.now()-t0)/1000||1);
+   ring.style.strokeDashoffset=302*(1-r);pulse=Math.min(1,pulse+.02);s.textContent=Math.round(r*100)+'% · '+mb.toFixed(1)+' MB/s'};
+  q.onload=()=>{s.textContent=q.status<300?'✓ Sent':'Failed';ok()};q.onerror=()=>{s.textContent='Failed';ok()};q.send(file)})}
+ pulse=1;setTimeout(()=>{ring.style.strokeDashoffset=302;s.textContent=''},2500);hello()}
 </script></body></html>

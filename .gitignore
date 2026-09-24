@@ -3,3 +3,4 @@ key.pem
 shared/
 *.part
 __pycache__/
+token.txt
