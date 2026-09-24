@@ -1,0 +1,92 @@
+<!doctype html><html><head><meta charset=utf-8>
+<meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name=apple-mobile-web-app-capable content=yes><meta name=theme-color content="#07080c">
+<title>PlayDrop</title>
+<style>
+:root{--bg:#07080c;--fg:#f3f5fa;--mut:#8b93a7;--acc:#4f8cff;--glass:rgba(255,255,255,.06);--edge:rgba(255,255,255,.1)}
+@media(prefers-color-scheme:light){:root{--bg:#fbfbfd;--fg:#15171c;--mut:#6b7080;--glass:rgba(255,255,255,.7);--edge:rgba(0,0,0,.08)}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--fg);font:15px -apple-system,system-ui,sans-serif}
+canvas{position:fixed;inset:0;width:100%;height:100%}
+.ui{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 18px)}
+.hint{margin-top:18vh;text-align:center}
+.hint h1{font-weight:500;font-size:clamp(20px,4vw,26px);margin:0;color:var(--acc);letter-spacing:-.01em}
+.hint p{margin:6px 0 0;color:var(--mut);font-size:14px}
+.peer{margin-top:7vh;display:flex;flex-direction:column;align-items:center;gap:10px;cursor:pointer;user-select:none}
+.orb{position:relative;width:92px;height:92px;border-radius:50%;display:grid;place-items:center;
+ background:var(--glass);border:1px solid var(--edge);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+ box-shadow:-3px 0 18px rgba(255,40,90,.35),3px 0 18px rgba(40,200,255,.35),0 10px 40px rgba(79,140,255,.25);transition:transform .25s}
+.peer:active .orb,.peer.on .orb{transform:scale(1.08)}
+.orb svg.ic{width:40px;height:40px;stroke:var(--fg)}
+.ring{position:absolute;inset:-6px;width:104px;height:104px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke:var(--acc);stroke-width:3;stroke-linecap:round;stroke-dasharray:314;stroke-dashoffset:314;transition:stroke-dashoffset .15s}
+.name{font-weight:600}.st{color:var(--mut);font-size:13px;min-height:1em;text-align:center}
+.me{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:8px}
+.logo{width:54px;height:54px}
+.pill{border:1px solid var(--edge);background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+ color:var(--fg);border-radius:999px;padding:8px 16px;font:inherit;cursor:pointer}
+.pill b{color:var(--acc);font-weight:600}
+.sheet{position:fixed;left:0;right:0;bottom:0;max-height:72vh;background:var(--bg);border-radius:22px 22px 0 0;border-top:1px solid var(--edge);
+ box-shadow:0 -20px 60px rgba(0,0,0,.35);transform:translateY(105%);transition:transform .35s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;z-index:5}
+.sheet.open{transform:none}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--edge);margin:10px auto}
+.sheet h2{margin:4px 20px 10px;font-size:17px}
+.list{overflow:auto;padding:0 12px calc(env(safe-area-inset-bottom) + 12px)}
+.list a{display:flex;align-items:center;gap:12px;padding:12px 8px;color:var(--fg);text-decoration:none;border-radius:12px}
+.list a:active{background:var(--glass)}
+.ic2{width:38px;height:38px;border-radius:10px;background:rgba(79,140,255,.14);display:grid;place-items:center;flex:none;color:var(--acc);font-size:12px;font-weight:700}
+.nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sz{color:var(--mut);font-size:13px}
+.dl{color:var(--acc)}.empty{padding:28px;text-align:center;color:var(--mut)}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.3s;z-index:4}.scrim.open{opacity:1;pointer-events:auto}
+input{display:none}
+</style></head><body>
+<canvas id=c></canvas>
+<div class=ui>
+ <div class=hint><h1>Tap the PC to send files</h1><p>Encrypted · no size limit · stays on your Wi‑Fi</p></div>
+ <label class=peer id=peer><input type=file id=f multiple>
+  <div class=orb><svg class=ring viewBox="0 0 104 104"><circle id=pr cx=52 cy=52 r=50 /></svg>
+   <svg class=ic viewBox="0 0 24 24" fill=none stroke-width=1.6 stroke-linecap=round stroke-linejoin=round><rect x=3 y=4 width=18 height=12 rx=2 /><path d="M8 20h8M12 16v4"/></svg></div>
+  <div class=name>{{HOST}}</div><div class=st id=s></div>
+ </label>
+ <div class=me>
+  <svg class=logo viewBox="0 0 48 48" fill=none stroke=var(--acc) stroke-width=4 stroke-linecap=round><circle cx=24 cy=24 r=4 fill=var(--acc) stroke=none /><path d="M15 33a12 12 0 1 1 18 0"/><path d="M9 39a20 20 0 1 1 30 0"/></svg>
+  <button class=pill id=open>Files on PC · <b>{{COUNT}}</b></button>
+ </div>
+</div>
+<div class=scrim id=scrim></div>
+<div class=sheet id=sheet><div class=grab></div><h2>On {{HOST}}</h2><div class=list>{{ROWS}}</div></div>
+<script>
+// ---- waves with chromatic aberration ----
+const cv=c,x=cv.getContext('2d'),dark=matchMedia('(prefers-color-scheme:dark)').matches;let W,H,D,pulse=0;
+function rs(){D=devicePixelRatio||1;W=cv.width=innerWidth*D;H=cv.height=innerHeight*D}rs();addEventListener('resize',rs);
+const CH=dark?[[255,40,110],[40,230,160],[60,130,255]]:[[255,0,90],[0,190,140],[40,100,255]];
+function frame(t){t/=1000;x.clearRect(0,0,W,H);x.globalCompositeOperation=dark?'lighter':'multiply';
+ const cx=W/2,cy=H*.86,max=Math.hypot(W,H)*.75,gap=90*D,n=Math.ceil(max/gap)+1,sp=(t*38*D)%gap,ab=(2.5+Math.sin(t*1.3)*1.5+pulse*10)*D;
+ for(let k=0;k<3;k++){const [r,g,b]=CH[k],o=(k-1)*ab;
+  for(let i=0;i<n;i++){const R=i*gap+sp;if(R<30*D)continue;
+   const fade=1-R/max;if(fade<=0)continue;const damp=Math.min(1,R/(260*D));
+   const a=(dark?.38:.28)*fade*fade*(1+pulse*1.5);x.beginPath();
+   for(let s=0;s<=120;s++){const th=Math.PI+s/120*Math.PI*2,wob=(Math.sin(th*6+t*1.6+i)*3*D*fade+Math.sin(th*3-t)*2*D)*damp;
+    const rr=R+wob+o*Math.cos(th-t*.4),px=cx+Math.cos(th)*(rr+o),py=cy+Math.sin(th)*rr;s?x.lineTo(px,py):x.moveTo(px,py)}
+   x.strokeStyle=`rgba(${r},${g},${b},${a})`;x.lineWidth=1.4*D;x.stroke()}}
+ x.globalCompositeOperation='source-over';pulse*=.96;requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+
+// ---- sheet ----
+const tog=v=>{sheet.classList.toggle('open',v);scrim.classList.toggle('open',v)};
+open.onclick=()=>tog(true);scrim.onclick=()=>tog(false);
+let y0;sheet.addEventListener('touchstart',e=>y0=e.touches[0].clientY);sheet.addEventListener('touchend',e=>{if(e.changedTouches[0].clientY-y0>60)tog(false)});
+
+// ---- upload ----
+const setP=r=>pr.style.strokeDashoffset=314*(1-r);
+async function send(files){for(const file of files){await new Promise(ok=>{
+ const q=new XMLHttpRequest(),t0=Date.now();q.open('PUT','/upload/'+encodeURIComponent(file.name));
+ q.upload.onprogress=e=>{const r=e.loaded/e.total,mb=e.loaded/1048576/((Date.now()-t0)/1000||1);setP(r);pulse=Math.min(1,pulse+.02);
+  s.textContent=Math.round(r*100)+'% · '+mb.toFixed(1)+' MB/s'};
+ q.onload=()=>{s.textContent=q.status<300?'✓ '+file.name:'Failed: '+file.name;ok()};q.onerror=()=>{s.textContent='Failed: '+file.name;ok()};q.send(file)})}
+ pulse=1;setTimeout(()=>location.reload(),900)}
+f.onchange=()=>send(f.files);
+['dragover','dragenter'].forEach(e=>addEventListener(e,v=>{v.preventDefault();peer.classList.add('on')}));
+['dragleave','drop'].forEach(e=>addEventListener(e,()=>peer.classList.remove('on')));
+addEventListener('drop',v=>{v.preventDefault();send(v.dataTransfer.files)});
+</script></body></html>
