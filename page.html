@@ -53,7 +53,7 @@ input{display:none}
 </style></head><body>
 <canvas id=c></canvas>
 <div class=ui>
- <div class=hint id=hint><h1 id=ht>Open PlayDrop on other devices</h1><p>Encrypted · no size limit · stays on your Wi‑Fi</p></div>
+ <div class=hint id=hint><h1 id=ht>Open PlayDrop on other devices</h1><p>No size limit · stays on your Wi‑Fi</p></div>
  <div class=peers id=peers></div>
  <div class=me>
   <svg class=logo viewBox="0 0 48 48" fill=none stroke=var(--acc) stroke-width=4 stroke-linecap=round><circle cx=24 cy=24 r=4 fill=var(--acc) stroke=none /><path d="M15 33a12 12 0 1 1 18 0"/><path d="M9 39a20 20 0 1 1 30 0"/></svg>
@@ -66,7 +66,6 @@ input{display:none}
 <div class=dlg id=dlg><h3 id=dfrom></h3><div class=sz>sent you a file</div><div class=fn id=dname></div><div class=sz id=dsize></div>
  <div class=row><button class=btn2 id=dno>Ignore</button><a class=btn1 id=dyes download>Save</a></div></div>
 <script>
-if(location.search)history.replaceState(null,'','/'); // hide ?k= from the address bar
 
 // ---- waves with chromatic aberration ----
 const cv=c,x=cv.getContext('2d'),dark=matchMedia('(prefers-color-scheme:dark)').matches;let W,H,D,pulse=0;
@@ -128,7 +127,6 @@ function render(list){
 const inbox=[];
 async function hello(){try{
  const r=await fetch('/hello',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:me.id,name:me.name,type:TYPE})});
- if(r.status==401)return location.reload();
  const j=await r.json();render(j.peers);
  if(+count.textContent!==j.count){count.textContent=j.count;refreshList()}
  inbox.push(...j.inbox);showNext()}catch(e){}}
